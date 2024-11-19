@@ -133,13 +133,10 @@ defmodule Makeup.Lexers.HEExLexer do
 
   defp heex_postprocess([]), do: []
 
-  # The HTMLLexer classifies any unknown tag names as "string".
-  # We customize this here to get a nicer highlighting.
+  # Treat any tag name as possible HEEx component
   defp heex_postprocess([
-         {:punctuation, %{language: :html}, open_or_close} = punctuation,
-         {:string, %{language: :html} = attrs, tag_name} | tokens
-       ])
-       when open_or_close in ["<", "</"] do
+         {:name_tag, %{language: :html} = attrs, tag_name} | tokens
+       ]) do
     tag_tokens =
       case ElixirLexer.lex(tag_name) do
         # MyMod.function -> remote component
@@ -152,17 +149,17 @@ defmodule Makeup.Lexers.HEExLexer do
         [{:operator, _, "."} | _rest] ->
           [{:name_function, attrs, tag_name}]
 
+        # :name -> slot
+        # we use string_symbol as that is how the `slot :foo` slot declaration
+        # is highlighted in the docs
+        [{:string_symbol, _, [":" | _]} | _rest] ->
+          [{:string_symbol, attrs, tag_name}]
+
         _ ->
-          # any other tag (HTML5 native tags are classified as :keyword by makeup_html)
-          # but let's just use it for any other tag as well (could be a CustomElement)
-          [{:keyword, attrs, tag_name}]
+          [{:name_tag, attrs, tag_name}]
       end
 
-    List.flatten([
-      punctuation,
-      tag_tokens
-      | heex_postprocess(tokens)
-    ])
+    tag_tokens ++ heex_postprocess(tokens)
   end
 
   defp heex_postprocess([token | tokens]), do: [token | heex_postprocess(tokens)]
