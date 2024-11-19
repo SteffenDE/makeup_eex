@@ -11,7 +11,7 @@ defmodule Makeup.Lexers.HEExLexer do
   # a different HTML lexer
   alias Makeup.Lexers.{
     ElixirLexer,
-    HTMLLexer
+    # HTMLLexer
   }
 
   alias Makeup.Lexers.EExLexer.Splicer
@@ -240,7 +240,7 @@ defmodule Makeup.Lexers.HEExLexer do
   @impl Makeup.Lexer
   def lex(text, opts \\ []) do
     group_prefix = Keyword.get(opts, :group_prefix, random_prefix(10))
-    outer_lexer = Keyword.get(opts, :outer_lexer, HTMLLexer)
+    outer_lexer = Keyword.get(opts, :outer_lexer, MakeupLexers.HTMLLexer)
 
     # First pass - lex the HEEx part and ignore the outside HTML
     {:ok, tokens, "", _, _, _} = root(text)
